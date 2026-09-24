@@ -14,7 +14,7 @@
 #   ② trap 里**先发终止信号、再写结局**，而且结局要写清"做了什么"
 #      （SIGNAL-RECEIVED / TERM-SENT / KILL-SENT / WORKER=terminated|still-alive）——
 #      **不要提前写一个看起来最终的结局**。
-#   ③ 记录目录若在仓库之外，需要 `--add-dir` 工人才能写 handoffs/。
+#   ③ 记录目录若在仓库之外，只需用 `--add-dir` 加入 handoffs/。
 #      ⚠ 它**只增不限**（`omp --help`：*Add a workspace directory beyond the working
 #      directory*）——对已在工作目录内的文件毫无隔离作用。"工人不得读 doc/ 其余部分"
 #      是**合同约定，不是技术隔离**。
@@ -74,7 +74,7 @@ CONT=""
   --cwd "$WORK_DIR" \
   --session-dir "$RECORD_DIR/.sessions/$W" \
   --config "$AGENT_CONFIG" \
-  --add-dir "$RECORD_DIR" \
+  --add-dir "$RECORD_DIR/handoffs" \
   --auto-approve \
   --max-time "$MAX_TIME" \
   "$(cat "$P")" >> "$OUT" 2>&1 &
