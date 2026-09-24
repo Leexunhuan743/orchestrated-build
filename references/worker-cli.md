@@ -456,6 +456,31 @@
 
 > 判据：**C4 是最容易踩的一栏**——同一句"让它建个文件"，18 个 CLI 里有一半需要各自不同的旗标/配置才肯在无 TTY 下动手。派活前先把这一栏的旗标写进调用行，否则现象是"挂住"或"什么都没做"，而不是报错。
 
+**C5（运行上限）与 C10（记录落点）一览**（同一批实测）：
+
+| CLI | C5 自带上限 | C10 记录落点 |
+|---|---|---|
+| omp | `--max-time`（`600`/`10m`/`1h`） | `~/.omp/agent/sessions/<项目>/`（jsonl） |
+| pi | 无 ⇒ 驱动器 `timeout` | `~/.pi/agent/sessions/<项目>/`（jsonl） |
+| opencode | 无 ⇒ 驱动器 `timeout` | `~/.local/share/opencode/opencode.db`（SQLite：`event`/`part`/`message`） |
+| kilo | 无 ⇒ 驱动器 `timeout` | 同 opencode 形态（SQLite + `kilo export`） |
+| cline | `--timeout` | `~/.cline/data/db/sessions.db`（SQLite） |
+| crush | 无 ⇒ 驱动器 `timeout` | 项目内 `.crush/` |
+| codex | 无 ⇒ 驱动器 `timeout` | `~/.codex/sessions/<Y>/<M>/<D>/rollout-*.jsonl`（首行 `session_meta` 带 `cwd`） |
+| claude | `--max-budget-usd`（**墙上时钟无**） | `~/.claude/projects/<slug>/<uuid>.jsonl` |
+| qwen | 无 ⇒ 驱动器 `timeout` | `~/.qwen/projects/<slug>/chats/<uuid>.jsonl` |
+| goose | 无 ⇒ 驱动器 `timeout` | `~/.local/share/goose/sessions/sessions.db`（SQLite） |
+| cn | 无 ⇒ 驱动器 `timeout` | 未定（`~/.continue/` 下未见会话文件） |
+| codewhale | 无 ⇒ 驱动器 `timeout` | `~/.codewhale/sessions/` |
+| reasonix | `--max-steps`（**步数**，非时钟） | `~/.reasonix/sessions/` + `reasonix session list --json` |
+| iflow | **`--timeout` / `--max-turns` / `--max-tokens`**（这一栏最全） | `~/.iflow/projects/<slug>/` |
+| hermes | 无 ⇒ 驱动器 `timeout` | `~/.hermes/state.db`（SQLite） |
+| openclaw | 无 ⇒ 驱动器 `timeout` | `~/.openclaw/`（`agents/` + `transcripts` 配置节 + `audit` 子命令） |
+| gptme | 无 ⇒ 驱动器 `timeout` | 未定（`~/.gptme` 为空） |
+| aider | `--timeout` | 仓库内 `.aider.chat.history.md`（Markdown，非 jsonl） |
+
+> 判据：**C5 不能指望 CLI**——18 个里只有 5 个自带上限（omp / cline / claude 的预算 / iflow / aider），其余 13 个必须由驱动器 `timeout` 兜；**C10 也不是统一格式**（jsonl / SQLite / Markdown 三种都有），越界读判据要按 CLI 各写一遍，不能照抄。
+
 ## 5. 装工人 CLI 的环境前提（Linux / WSL2，无 root）
 
 判据：**没有 root 也能装**——全部走用户级路径，不要为了装 CLI 去要 sudo。
