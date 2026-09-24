@@ -295,6 +295,40 @@
 - `amp -x "<提示词>"` 需先 `amp login`；实测直接进浏览器登录流程并打印 `https://ampcode.com/auth/cli-login?...` 后停在"粘贴验证码"
 - **接不了自建网关**：没有 base-url / provider 开关，凭据由 Amp 账号签发（只有 `--settings-file`）
 
+### reasonix — 实测通过（1.38.12，npm `reasonix`，Go 单二进制）
+
+| 语义 | 形态 |
+|---|---|
+| C1 | `reasonix run "<任务>"`（一次性，流式到 stdout）；`reasonix -p/--print "<任务>"`；`--output-format text\|json\|stream-json`；`--max-steps N` |
+| C2 | `-c` / `--continue`；`-r` / `--resume [QUERY]`；`reasonix run --resume <路径>` |
+| C3 | `--add-dir <PATH>`（文件工具默认锁在启动目录） |
+| C4 | `--permission-mode MODE`；配置里 `[permissions] mode = ask\|allow\|deny` + `deny/allow/ask` 规则 |
+| C5 | 文档未载（有 `--max-steps` 是**步数**上限）⇒ 墙上时钟仍靠驱动器 `timeout` |
+| C6 / C7 | 驱动器 |
+| C8 / C9 | `[agent] compact_ratio`（默认 0.8）触发自动压缩；交接落盘机制：未找到 |
+| C10 | `reasonix session list --json` / `session show <id> --json`（机器可读）；权威会话在 `~/.reasonix/sessions/`，本次 one-shot 未落盘 |
+| 档位 | `--model NAME`、`--effort LEVEL`；`[agent] planner_model`（双模型：执行 + 规划）、`subagent_model` |
+| 接自建网关 | `~/.reasonix/config.toml`：`[[providers]]` 数组，`name` / `kind = "openai"` / `base_url` / `models[]` / `default` / `api_key_env`；**密钥写在 `~/.reasonix/.env`**（`api_key_env` 只存变量名） |
+| 实测 | `reasonix run "reply with exactly: OK"` → `OK`，rc=0；`reasonix doctor` 显示 provider `wb … key:present` |
+| 坑 | 默认要 **shell 沙箱**：无 bubblewrap 时直接拒绝执行 bash（警告原文 *refusing to run unconfined*）⇒ 要么装 `bwrap`，要么显式选 Full access 权限模式。另外 npm 上的 README 是**旧 TS 线**（0.x，maintenance），现行是 Go 重写（`main-v2`）——文档要看对分支 |
+
+### codewhale — 实测通过（0.10.0，npm `codewhale`，Rust）
+
+| 语义 | 形态 |
+|---|---|
+| C1 | `codewhale exec "<提示词>"`（非交互）；`--auto` 开工具+自动批准；`--json` 摘要；`--output-format text\|stream-json` |
+| C2 | `--resume <SESSION_ID>` / `--session-id <id>` / `--continue`；另有 `codewhale resume` / `fork` |
+| C3 | 文档未载（按调用方 `cd`；工作目录由 workspace 决定） |
+| C4 | `--auto`（工具模式 + 自动批准）；`--skip-permissions-unsafe` 一类见 `droid` 对照，codewhale 侧为 `auth`/权限配置 |
+| C5 | 文档未载 ⇒ 驱动器 `timeout` |
+| C6 / C7 | 驱动器 |
+| C8 / C9 | 文档未载 |
+| C10 | `codewhale sessions`（列会话）；记录目录 `~/.codewhale/sessions/`（另有 `~/.codewhale/logs/`） |
+| 档位 | `CODEWHALE_MODEL` / `[providers.<t>].model`；`codewhale models --provider <id>` 刷新目录 |
+| 接自建网关 | `~/.codewhale/config.toml`：`provider = "openai"` + `[providers.openai] base_url / model / api_key`（或 `OPENAI_BASE_URL` + `OPENAI_MODEL`）；`codewhale config doctor` 可校验 |
+| 实测 | `DEEPSEEK_ALLOW_INSECURE_HTTP=1 codewhale exec --auto "reply with exactly: OK"` → `OK`，rc=0；`codewhale config doctor` → *credentials and endpoints clean* |
+| 坑 | **非 loopback 的 `http://` base_url 会被拒**（官方原文：*Non-local `http://` base URLs are rejected unless `DEEPSEEK_ALLOW_INSECURE_HTTP=1`*）——自建网关常用内网 IP，这一条不设就是连不上 |
+
 ### 未列的 CLI
 
 `cursor-agent` / `kilo` / `openhands` / `plandex` / `codebuff` 等不在本节：本次没装过，或官方文档没查到入口。要加一个，走 §6 的流程，不要凭印象补一行。
@@ -303,7 +337,7 @@
 
 | 类 | 判据 | 已实测的成员 |
 |---|---|---|
-| ① **能指向自建网关** | 有 provider / base-url / OpenAI 兼容配置入口 | aider · crush · opencode · pi · omp · cline · qwen-code · goose |
+| ① **能指向自建网关** | 有 provider / base-url / OpenAI 兼容配置入口 | aider · crush · opencode · pi · omp · cline · qwen-code · goose · codewhale · reasonix |
 | ② **SaaS 绑定，只认自家账号** | 登录流程换不出可替换的凭据；没有 base-url 开关 | amp · droid；以及只认自家 wire API 的 gemini-cli（Gemini API）、codex（Responses）、claude-code（Messages）——后三者**加适配层**后可归入① |
 
 ## 5. 装工人 CLI 的环境前提（Linux / WSL2，无 root）
@@ -321,6 +355,7 @@
 - **WSL 里的 `127.0.0.1` 到不了宿主**：宿主的网关与代理都要用宿主 IP（NAT 网关地址：`ip route | awk '/^default/{print $3}'`，实测 `172.18.240.1`）。同一台宿主上的 `http://127.0.0.1:7863` 在 WSL 里是 000，换宿主 IP 就是 200。
 - 宿主有出网代理（如 `127.0.0.1:7897`）时，WSL 里写 `http_proxy=http://<宿主IP>:7897`。但**能直连就别挂代理**：挂错代理会出现 `curl: (35) SSL_ERROR_SYSCALL`。
 - 个别站点在 HTTP/2 下直接失败（`000`），加 `--http1.1` 即可（实测：`chatgpt.com/codex/install.sh`、`opencode.ai/install`）。
+- **自建网关多是内网 IP + `http://`**：有的 CLI 直接拒（codewhale 需 `DEEPSEEK_ALLOW_INSECURE_HTTP=1`），有的不拒（aider / opencode / pi / omp / cline / goose / reasonix 实测都直接吃）。选 CLI 时先确认这一条——不设的现象是"连不上"，而不是"配置写错了"。
 
 **安装器（三家都踩过）**：
 
