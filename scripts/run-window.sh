@@ -6,17 +6,22 @@
 #   于是你会在十几分钟后才发现。裸 `agent ... | tee` 在进程被杀时不会留下结局记录。
 #
 # 本脚本保证：工人正常退出、报错、被杀，以及驱动器收到 INT / TERM / HUP 时，
-#   flow 文件末尾都会留下结局标记，**并且工人进程会被终止**。
+#   flow 文件末尾都会留下结局标记，并且**会尽力终止工人进程**。
 #
-#   两处关键实现，改脚本时不要退化：
+#   三处关键实现，改脚本时不要退化：
 #   ① 工人跑在**后台**、用 `wait` 等 —— bash 在 `wait` 期间收到信号会**立即**执行 trap；
 #      若让工人占着前台，trap 会被推迟到工人自己跑完（可能几十分钟后），等于没有。
-#   ② trap 里**先 kill 工人再写标记** —— 只写标记不杀进程，工人会继续跑满运行上限、
-#      继续写文件、继续提交，而你以为它停了。
+#   ② trap 里**先发终止信号、再写结局**，而且结局要写清"做了什么"
+#      （SIGNAL-RECEIVED / TERM-SENT / KILL-SENT / WORKER=terminated|still-alive）——
+#      **不要提前写一个看起来最终的结局**。
+#   ③ 记录目录若在仓库之外，需要 `--add-dir` 工人才能写 handoffs/。
+#      ⚠ 它**只增不限**（`omp --help`：*Add a workspace directory beyond the working
+#      directory*）——对已在工作目录内的文件毫无隔离作用。"工人不得读 doc/ 其余部分"
+#      是**合同约定，不是技术隔离**。
 #
-#   做不到的：**SIGKILL 与机器故障无法捕获**（内核不给进程执行清理的机会）。
-#   但那种情况下"文件里没有 EXIT 行"本身就是信号——读不到结局 = 非正常结束。
-#   所以判据不是"一定有 EXIT"，而是"**有 EXIT 才说明这次运行正常收尾**"。
+#   ⚠ 做不到的：**无法保证整棵子进程树停止**——只能终止直接子进程（CLI 本身），
+#      它派生的孙进程可能存活；**SIGKILL 与机器故障**也无法捕获。
+#      判据不是"一定有 EXIT"，而是"**有 EXIT 才说明这次运行正常收尾**"。
 #
 # 用法:
 #   RECORD_DIR=<repo>/doc WORK_DIR=<被构建仓库> bash run-window.sh <窗口ID> <指令文件> [new|continue]
@@ -69,19 +74,38 @@ CONT=""
   --cwd "$WORK_DIR" \
   --session-dir "$RECORD_DIR/.sessions/$W" \
   --config "$AGENT_CONFIG" \
-  --add-dir "$RECORD_DIR/handoffs" \
+  --add-dir "$RECORD_DIR" \
   --auto-approve \
   --max-time "$MAX_TIME" \
   "$(cat "$P")" >> "$OUT" 2>&1 &
 AGENT_PID=$!
 
-# 驱动器自身被杀：**先终止工人，再写结局标记**（见文件头 ②）。
+# 驱动器自身被杀。**分三步记录，不要提前写一个看起来最终的结局**：
+#   ① 收到信号  ② 已发终止信号（TERM，必要时 KILL）  ③ 尽力确认工人是否退出
+# 做不到的：**无法保证整棵子进程树停止**——这里只能终止直接子进程（CLI 本身），
+#   它派生的孙进程可能存活。所以结局行写的是"我们做了什么"，不是"工人已死"。
 on_signal() {
+  local now; now=$(date +%s)
   echo "" >> "$OUT"
-  echo "=== WINDOW $W EXIT=driver-killed DURATION=$(( $(date +%s) - START ))s END $(date -Iseconds) ===" >> "$OUT"
-  kill -TERM "$AGENT_PID" 2>/dev/null
+  echo "=== WINDOW $W SIGNAL-RECEIVED DURATION=$(( now - START ))s END $(date -Iseconds) ===" >> "$OUT"
+
+  kill -TERM "$AGENT_PID" 2>/dev/null \
+    && echo "=== WINDOW $W TERM-SENT pid=$AGENT_PID ===" >> "$OUT" \
+    || echo "=== WINDOW $W TERM-FAILED pid=$AGENT_PID（进程可能已自行退出）===" >> "$OUT"
+
   sleep 2
-  kill -KILL "$AGENT_PID" 2>/dev/null
+  if kill -0 "$AGENT_PID" 2>/dev/null; then
+    kill -KILL "$AGENT_PID" 2>/dev/null \
+      && echo "=== WINDOW $W KILL-SENT pid=$AGENT_PID ===" >> "$OUT" \
+      || echo "=== WINDOW $W KILL-FAILED pid=$AGENT_PID ===" >> "$OUT"
+  fi
+
+  # 尽力确认；这只覆盖直接子进程，不含它的后代。
+  if kill -0 "$AGENT_PID" 2>/dev/null; then
+    echo "=== WINDOW $W EXIT=driver-killed WORKER=still-alive（无法确认已停止，请自行检查残留进程）===" >> "$OUT"
+  else
+    echo "=== WINDOW $W EXIT=driver-killed WORKER=terminated ===" >> "$OUT"
+  fi
   exit 130
 }
 trap on_signal INT TERM HUP
