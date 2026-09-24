@@ -5,10 +5,16 @@
 #   窗口可能**静默死亡**——进程消失、输出文件只有一行、没有任何退出信息，
 #   于是你会在十几分钟后才发现。裸 `agent ... | tee` 在进程被杀时不会留下结局记录。
 #
-# 本脚本保证：工人正常退出、报错、被杀，以及驱动器收到 **INT / TERM / HUP** 时，
-#   flow 文件末尾都会留下结局标记。
+# 本脚本保证：工人正常退出、报错、被杀，以及驱动器收到 INT / TERM / HUP 时，
+#   flow 文件末尾都会留下结局标记，**并且工人进程会被终止**。
 #
-#   ⚠ 做不到的：**SIGKILL 与机器故障无法捕获**（内核不给进程执行清理的机会）。
+#   两处关键实现，改脚本时不要退化：
+#   ① 工人跑在**后台**、用 `wait` 等 —— bash 在 `wait` 期间收到信号会**立即**执行 trap；
+#      若让工人占着前台，trap 会被推迟到工人自己跑完（可能几十分钟后），等于没有。
+#   ② trap 里**先 kill 工人再写标记** —— 只写标记不杀进程，工人会继续跑满运行上限、
+#      继续写文件、继续提交，而你以为它停了。
+#
+#   做不到的：**SIGKILL 与机器故障无法捕获**（内核不给进程执行清理的机会）。
 #   但那种情况下"文件里没有 EXIT 行"本身就是信号——读不到结局 = 非正常结束。
 #   所以判据不是"一定有 EXIT"，而是"**有 EXIT 才说明这次运行正常收尾**"。
 #
@@ -51,9 +57,6 @@ START=$(date +%s)
 CONT=""
 [ "$MODE" = "continue" ] && CONT="-c"
 
-# 驱动器自身被杀时也要留下结局标记（否则与"工人还在跑"无法区分）。
-trap 'echo "" >> "$OUT"; echo "=== WINDOW '"$W"' EXIT=driver-killed DURATION=$(( $(date +%s) - '"$START"' ))s END $(date -Iseconds) ===" >> "$OUT"; exit 130' INT TERM HUP
-
 {
   echo "=== WINDOW $W START $(date -Iseconds) MODE=$MODE ==="
   echo "=== PROMPT $P ==="
@@ -61,14 +64,29 @@ trap 'echo "" >> "$OUT"; echo "=== WINDOW '"$W"' EXIT=driver-killed DURATION=$((
   echo ""
 } > "$OUT"
 
+# 工人跑在后台 —— 这样 trap 才能在收到信号时**立即**执行（见文件头 ①）。
 "$AGENT_CMD" -p $CONT \
   --cwd "$WORK_DIR" \
   --session-dir "$RECORD_DIR/.sessions/$W" \
   --config "$AGENT_CONFIG" \
-  --add-dir "$RECORD_DIR" \
+  --add-dir "$RECORD_DIR/handoffs" \
   --auto-approve \
   --max-time "$MAX_TIME" \
-  "$(cat "$P")" >> "$OUT" 2>&1
+  "$(cat "$P")" >> "$OUT" 2>&1 &
+AGENT_PID=$!
+
+# 驱动器自身被杀：**先终止工人，再写结局标记**（见文件头 ②）。
+on_signal() {
+  echo "" >> "$OUT"
+  echo "=== WINDOW $W EXIT=driver-killed DURATION=$(( $(date +%s) - START ))s END $(date -Iseconds) ===" >> "$OUT"
+  kill -TERM "$AGENT_PID" 2>/dev/null
+  sleep 2
+  kill -KILL "$AGENT_PID" 2>/dev/null
+  exit 130
+}
+trap on_signal INT TERM HUP
+
+wait "$AGENT_PID"
 CODE=$?
 
 END=$(date +%s)
@@ -77,12 +95,21 @@ END=$(date +%s)
   echo "=== WINDOW $W EXIT=$CODE DURATION=$((END - START))s END $(date -Iseconds) ==="
 } >> "$OUT"
 
-# 兜底 handoff 的搬运：配置叠加层让工人在上下文将满时自动把交接文档写进
-# .sessions/$W/，而下一窗口被要求读的是 handoffs/$W.md —— 落点不同。
+# 兜底 handoff 的搬运：配置叠加层让工人在上下文将满时自动把交接文档写进会话产物目录，
+# 而下一窗口被要求读的是 handoffs/$W.md —— 落点不同。
 # 不搬的话，"我忘记换窗口"这个兜底场景下交接确实落盘了，但落在没人会去读的地方。
-LATEST="$(ls -t "$RECORD_DIR/.sessions/$W"/handoff-*.md 2>/dev/null | head -1 || true)"
-if [ -n "${LATEST:-}" ] && [ ! -f "$RECORD_DIR/handoffs/$W.md" ]; then
-  cp "$LATEST" "$RECORD_DIR/handoffs/$W.md" && echo "auto-handoff copied -> handoffs/$W.md"
+#
+# ⚠ 两个曾经踩过的坑：
+#   ① 会话产物目录在 `--session-dir` 下**再深一层**（.sessions/<W>/<session-id>/），
+#      只 glob `.sessions/<W>/handoff-*.md` 永远匹配不到 —— 这里两种深度都覆盖。
+#   ② 续轮时工人会**更新**交接；用 `[ ! -f 目标 ]` 做条件会把新的静默丢弃、留下旧的。
+LATEST="$(ls -t "$RECORD_DIR/.sessions/$W"/handoff-*.md \
+              "$RECORD_DIR/.sessions/$W"/*/handoff-*.md 2>/dev/null | head -1 || true)"
+if [ -n "${LATEST:-}" ]; then
+  TARGET="$RECORD_DIR/handoffs/$W.md"
+  if [ ! -f "$TARGET" ] || [ "$LATEST" -nt "$TARGET" ]; then
+    cp "$LATEST" "$TARGET" && echo "auto-handoff copied -> handoffs/$W.md"
+  fi
 fi
 
 echo "exit=$CODE duration=$((END - START))s"

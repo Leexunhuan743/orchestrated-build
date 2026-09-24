@@ -15,8 +15,10 @@ compaction:
   # 自动触发的 handoff 额外写 handoff-<ISO>.md 到会话产物目录。
   # 手动/交互式 handoff 不写盘，所以这里必须为 true。
   #
-  # 注意：这个落点（.sessions/<W>/）与下一窗口被要求读的 handoffs/<W>.md 不同。
-  # 换 CLI 后必须自己补上搬运步骤——run-window.sh 的收尾块已经这么做了。
+  # 注意：真实落点是 `.sessions/<W>/<session-id>/handoff-<ISO>.md`
+  # ——在 `--session-dir` 下**再深一层**（实测：`.sessions/W1/` 里只有 `<session-id>.jsonl`
+  # 和 `<session-id>/` 子目录）。而下一窗口被要求读的是 `handoffs/<W>.md`，两处不同。
+  # 换 CLI 后必须自己补上搬运步骤——run-window.sh 的收尾块已经这么做了，且覆盖两种深度。
   # 不搬的话，"我忘记换窗口"这个兜底场景下交接确实落盘了，但落在没人会去读的地方。
   handoffSaveToDisk: true
   keepRecentTokens: 20000
