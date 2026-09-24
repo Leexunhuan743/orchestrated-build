@@ -115,6 +115,7 @@ digraph loop {
 | `references/pitfalls.md` | 通用陷阱库（按类别，随用增长） |
 | `templates/` | 冻结方案 · 切片指令（**内嵌交接模板**） · 工人合同 · 验收记录 |
 | `scripts/` | 一份 omp 驱动器实现（**协议与工具无关**；语义要求见 `delegation.md`） |
+| `VALIDATION.md` | 验证证据 + 维护说明（**只在你要改这个 skill 时读**） |
 
 ## 收尾与自我进化
 

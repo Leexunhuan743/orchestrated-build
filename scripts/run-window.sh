@@ -24,12 +24,12 @@
 #      判据不是"一定有 EXIT"，而是"**有 EXIT 才说明这次运行正常收尾**"。
 #
 # 用法:
-#   RECORD_DIR=<repo>/doc WORK_DIR=<被构建仓库> bash run-window.sh <窗口ID> <指令文件> [new|continue]
+#   RECORD_DIR=<repo>/orch-doc WORK_DIR=<被构建仓库> bash run-window.sh <窗口ID> <指令文件> [new|continue]
 #   第三个参数传 continue 用于**续轮**：同一会话接着上次继续（撞运行上限后的标准处置）。
 #
 # 必填环境变量（没有合理默认值，猜错会让工人在错误目录里干活）：
 #   RECORD_DIR   记录目录（本脚本会把 流水/ 与 .sessions/ 写在它下面）
-#                按 references/gates.md「目录布局」应为 <repo>/doc
+#                按 references/gates.md「目录布局」应为 <repo>/orch-doc
 #   WORK_DIR     被构建仓库的路径
 # 可选：
 #   AGENT_CMD    工人 CLI（默认 omp）
