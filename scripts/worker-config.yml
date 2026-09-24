@@ -1,0 +1,22 @@
+# 下发给工人窗口的配置叠加层（--config）
+#
+# 目的：让窗口在上下文逼近阈值时**自动**生成交接文档落盘，
+# 作为"我忘记换窗口"的兜底。
+#
+# 注意：字段名随工人 CLI 而变。以下是 omp 的写法；
+# 换 CLI 时保留**意图**（上下文将满时自动落盘一份交接文档）即可，字段名按该 CLI 的文档改。
+compaction:
+  # 只保留本地可用的方法：handoff（生成交接文档）优先，
+  # shake（机械裁剪工具输出）与 soft（本地摘要）作为降级。
+  methodOrder:
+    - handoff
+    - shake
+    - soft
+  # 自动触发的 handoff 额外写 handoff-<ISO>.md 到会话产物目录。
+  # 手动/交互式 handoff 不写盘，所以这里必须为 true。
+  #
+  # 注意：这个落点（.sessions/<W>/）与下一窗口被要求读的 handoffs/<W>.md 不同。
+  # 换 CLI 后必须自己补上搬运步骤——run-window.sh 的收尾块已经这么做了。
+  # 不搬的话，"我忘记换窗口"这个兜底场景下交接确实落盘了，但落在没人会去读的地方。
+  handoffSaveToDisk: true
+  keepRecentTokens: 20000
