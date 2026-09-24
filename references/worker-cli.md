@@ -329,16 +329,102 @@
 | 实测 | `DEEPSEEK_ALLOW_INSECURE_HTTP=1 codewhale exec --auto "reply with exactly: OK"` → `OK`，rc=0；`codewhale config doctor` → *credentials and endpoints clean* |
 | 坑 | **非 loopback 的 `http://` base_url 会被拒**（官方原文：*Non-local `http://` base URLs are rejected unless `DEEPSEEK_ALLOW_INSECURE_HTTP=1`*）——自建网关常用内网 IP，这一条不设就是连不上 |
 
+### cn（Continue CLI）— 实测通过（1.5.47，npm `@continuedev/cli`）
+
+| 语义 | 形态 |
+|---|---|
+| C1 | `cn -p "<提示词>"`（非交互）；`--readonly`（只读规划）、`--auto`（放开工具） |
+| C2 | 文档未载 |
+| C3 | 文档未载（按调用方 `cd`） |
+| C4 | `--auto`（all tools allowed）；`--readonly` 相反 |
+| C5 | 文档未载 ⇒ 驱动器 `timeout` |
+| C10 | 文档未载（本次未取） |
+| 接自建网关 | `~/.continue/config.yaml`：`models: [{name, provider: openai, model, apiBase, apiKey}]`；也可 `--config <path>` 指定文件 |
+| 实测 | `cn -p "reply with exactly: OK"` → `OK`，rc=0 |
+
+### kilo — 实测通过（7.7.9，npm `@kilocode/cli`，**opencode 的 fork**）
+
+| 语义 | 形态 |
+|---|---|
+| C1 | `kilo run "<提示词>"`（**顶层 `kilo` 是 TUI**）；与 opencode 命令面几乎一致（`kilo auth` / `kilo models` / `kilo serve` / `kilo export`） |
+| C2 | `-c` / `--continue`；`-s` / `--session <id>`（同 opencode） |
+| C3 | 文档未载（同 opencode 的 `attach --dir`） |
+| C4 | 同 opencode 的 `--auto` 形态 |
+| C5 | 文档未载 ⇒ 驱动器 `timeout` |
+| C10 | 同 opencode 形态：SQLite 记录 + `kilo export [sessionID]` |
+| 接自建网关 | **沿用 opencode 的配置形状**：`~/.config/kilo/kilo.json` 写 `provider.<name>.{npm:"@ai-sdk/openai-compatible", options:{baseURL,apiKey}, models}` + `model: "<name>/<id>"` |
+| 实测 | `kilo run "reply with exactly: OK"` → `OK`，rc=0 |
+| 坑 | 它的日志里把自己标成 `opencode`（fork 自 opencode）⇒ 排障时按 opencode 的知识找路径，别按 Kilo Code 插件那套 |
+
+### iflow — 实测通过（0.5.19，npm `@iflow-ai/iflow-cli`）
+
+| 语义 | 形态 |
+|---|---|
+| C1 | `iflow -p "<提示词>"`；`-i` 交互；`-o/--output-file <path>` 落执行信息 |
+| C2 | `-c` / `--continue`；`-r` / `--resume`（带 session 文件） |
+| C3 | `--include-directories`（同 Gemini 系） |
+| C4 | `-y` / `--yolo`；`--default`（手动批准） |
+| C5 | **`--timeout <秒>`**（少见地自带运行上限）、`--max-tokens` |
+| C10 | 文档未载（`~/.iflow/projects/` 下有会话目录） |
+| 档位 | `-m` / `--model` |
+| 接自建网关 | `~/.iflow/settings.json`：`selectedAuthType: "openai-compatible"` + `apiKey` + `baseUrl` + `modelName`（**枚举值**：`oauth-iflow` / `oauth-aone` / `cloud-shell` / `iflow` / `aone` / `idealab` / `openai-compatible`） |
+| 实测 | 上面四键写进 settings.json 后 `iflow -p "reply with exactly: OK"` → 正常返回（Execution Info 报 `tokenUsage.input=15141`） |
+| 坑 | 写成 `"openai"` 会报 *Auth method has been deprecated*——**只有 `openai-compatible` 这个值有效**；环境变量方式（`API_KEY`/`BASE_URL`/`MODEL_NAME`）实测没生效，走 settings.json |
+
+### hermes — 实测通过（0.21.5，npm `hermes-agent`）
+
+| 语义 | 形态 |
+|---|---|
+| C1 | `hermes -z "<提示词>"`（一次性）；`--tui` / `--cli` 切界面 |
+| C2 | `--continue [SESSION_NAME]`；`--resume SESSION` |
+| C3 | `--in DIR`（指定工作目录）；`--worktree` |
+| C4 | `--yolo`（放开）；`--accept-hooks` |
+| C5 | 文档未载 ⇒ 驱动器 `timeout` |
+| C10 | 文档未载（`--usage-file <path>` 可导出用量） |
+| 档位 | `-m/--model`、`--provider`、`--reasoning LEVEL`、`-t/--toolsets` |
+| 接自建网关 | 环境变量 `OPENAI_API_KEY` + `OPENAI_BASE_URL`，命令行给 `--provider openai -m <model-id>` |
+| 实测 | 上述环境变量 + `hermes -z "reply with exactly: OK" -m global:deepseek-v4.1-flash --provider openai --yolo` → `OK` |
+| 坑 | **首次运行会报 `Hermes Agent isolated runtime is not ready`**，要先 `npm rebuild -g hermes-agent`（实测 rebuild 后即通） |
+
+### openclaw — 实测通过（2026.9.2，npm `openclaw`）
+
+| 语义 | 形态 |
+|---|---|
+| C1 | `openclaw agent --local -m "<消息>" --model <provider>/<id> [--json]`（`--local` = 嵌入式 agent，不经过它的 gateway） |
+| C2 | 文档未载（gateway 侧有会话概念） |
+| C3 | 文档未载（`agents` 子命令管 workspace） |
+| C4 | `approvals` 子命令管审批策略 |
+| C5 | 文档未载 ⇒ 驱动器 `timeout` |
+| C10 | 文档未载（有 `transcripts` 配置节与 `audit` 子命令） |
+| 接自建网关 | `openclaw config patch --file <json5>`，形状：`models.providers.<id>.{baseUrl, apiKey, models:[{id, name, api:"openai-completions"}]}`；先 `--dry-run` 校验 |
+| 实测 | patch 后 `openclaw agent --local -m "reply with exactly: OK" --model wb/global:deepseek-v4.1-flash --json` → 正常收尾（`stopReason=stop`、`runner=embedded`、`fallbackUsed=false`） |
+| 坑 | 它本体是**多频道聊天网关**（Telegram/Slack/…），当工人只用 `agent --local`；模型必须先注册进 `models.providers`，否则报 `Unknown model: <provider>/<id>` |
+
+### gptme — 实测通过（`uv tool install gptme`；**只认 Responses**）
+
+| 语义 | 形态 |
+|---|---|
+| C1 | `gptme -n --no-confirm "<提示词>"`（`-n` 非交互、隐含 `--no-confirm`）；`--output-format text\|json`；`-t/--tools` 收窄工具面（`none` / `read-only` / 逗号列表） |
+| C2 | `--name <会话名>` 续跑（结束时会打印 `resume with: gptme --name <…>`） |
+| C3 | 文档未载（按调用方 `cd`；prompt 里可带文件/URL 进上下文） |
+| C4 | `-y` / `--no-confirm` |
+| C5 | 文档未载 ⇒ 驱动器 `timeout` |
+| C10 | 文档未载（会话落在 gptme 自己的会话目录） |
+| 档位 | `-m/--model`（`provider/model` 形式） |
+| 接自建网关 | `OPENAI_API_KEY` + `OPENAI_BASE_URL` + `-m openai/<model-id>`；**但它打的是 `/v1/responses`** ⇒ 只开 chat 的网关要前置 `api2codex`（实测把 `OPENAI_BASE_URL` 指向 api2codex 的 8010 即通） |
+| 实测 | 经 api2codex：`gptme -n --no-confirm --model openai/global:deepseek-v4.1-flash "reply with exactly: OK"` → 会话正常完成（有 token 计费行） |
+| 坑 | 首次会去取 tiktoken 编码文件，超时会告警（可 `GPTME_TIKTOKEN_TIMEOUT=0` 关掉）；直接指 chat 网关会 `404 page not found`（栈里是 `_stream_responses`） |
+
 ### 未列的 CLI
 
-`cursor-agent` / `kilo` / `openhands` / `plandex` / `codebuff` 等不在本节：本次没装过，或官方文档没查到入口。要加一个，走 §6 的流程，不要凭印象补一行。
+`plandex`（安装脚本 SSL 失败）、`openhands`、`aichat`、`mods` 等不在本节：本次没装成或没装过。要加一个，走 §6 的流程，不要凭印象补一行。
 
 **判据（本次归纳）**——候选先分两类，②类必须先问用户有没有账号：
 
 | 类 | 判据 | 已实测的成员 |
 |---|---|---|
-| ① **能指向自建网关** | 有 provider / base-url / OpenAI 兼容配置入口 | aider · crush · opencode · pi · omp · cline · qwen-code · goose · codewhale · reasonix |
-| ② **SaaS 绑定，只认自家账号** | 登录流程换不出可替换的凭据；没有 base-url 开关 | amp · droid；以及只认自家 wire API 的 gemini-cli（Gemini API）、codex（Responses）、claude-code（Messages）——后三者**加适配层**后可归入① |
+| ① **能指向自建网关** | 有 provider / base-url / OpenAI 兼容配置入口 | aider · crush · opencode · pi · omp · cline · qwen-code · goose · codewhale · reasonix · cn · kilo · iflow · hermes · openclaw；gptme 与 codex 需 Responses 适配层，claude-code 需 Messages 适配层 |
+| ② **SaaS 绑定，只认自家账号** | 登录流程换不出可替换的凭据；没有 base-url 开关 | amp · droid · cursor-agent（`-e` 指向别处仍拿 key 去 Cursor 服务端校验，报 *API key is invalid*）· codebuff（只有 `CODEBUFF_APP_URL`，无 base-url）· gemini-cli（只认 Gemini API） |
 
 ## 5. 装工人 CLI 的环境前提（Linux / WSL2，无 root）
 
@@ -370,7 +456,8 @@
   `python3 -c "import tarfile; tarfile.open('/tmp/x.tar.bz2','r:bz2').extractall('/tmp/x')"`（goose 即如此装上）。
 - **落点**：二进制安装器（codex / claude / droid / opencode / goose）都落 `~/.local/bin`；npm 装的 CLI 落 node 的 bin 目录（`$HOME/.local/node/bin`）。
 - **npm 包里可能带没有执行位的 vendored 二进制**（qwen 的 ripgrep 报 `EACCES`）⇒ `chmod +x` 一下，别让它静默降级。
-- **装成功 ≠ 能用**：SaaS 绑定的 CLI（amp / droid）装完仍卡在登录/凭据上——先确认账号，再列入候选。
+- **装成功 ≠ 能用**：SaaS 绑定的 CLI（amp / droid / cursor-agent / codebuff）装完仍卡在登录/凭据上——先确认账号，再列入候选。
+- **有的 CLI 首次运行还要补一步**：`hermes-agent` 报 *isolated runtime is not ready* ⇒ `npm rebuild -g hermes-agent`；`codebuff` 首次运行会下 50 MB 二进制。**装完那次 `--help` 不算冒烟**，必须跑一次 C1。
 
 ## 6. 新增一个 CLI 的取证流程
 
