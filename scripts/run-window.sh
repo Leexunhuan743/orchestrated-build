@@ -23,6 +23,9 @@
 #      它派生的孙进程可能存活；**SIGKILL 与机器故障**也无法捕获。
 #      判据不是"一定有 EXIT"，而是"**有 EXIT 才说明这次运行正常收尾**"。
 #
+#   ⚠ 跨平台：时间戳只用 POSIX 可移植写法 `date +%Y-%m-%dT%H:%M:%S%z`。
+#      GNU 专有的 `date -Iseconds` 在 BSD / macOS 上直接报错，流水文件的时间戳会变成空。
+#
 # 用法:
 #   RECORD_DIR=<repo>/orch-doc WORK_DIR=<被构建仓库> bash run-window.sh <窗口ID> <指令文件> [new|continue]
 #   第三个参数传 continue 用于**续轮**：同一会话接着上次继续（撞运行上限后的标准处置）。
@@ -63,7 +66,7 @@ CONT=""
 [ "$MODE" = "continue" ] && CONT="-c"
 
 {
-  echo "=== WINDOW $W START $(date -Iseconds) MODE=$MODE ==="
+  echo "=== WINDOW $W START $(date +%Y-%m-%dT%H:%M:%S%z) MODE=$MODE ==="
   echo "=== PROMPT $P ==="
   echo "=== CWD $WORK_DIR ==="
   echo ""
@@ -87,7 +90,7 @@ AGENT_PID=$!
 on_signal() {
   local now; now=$(date +%s)
   echo "" >> "$OUT"
-  echo "=== WINDOW $W SIGNAL-RECEIVED DURATION=$(( now - START ))s END $(date -Iseconds) ===" >> "$OUT"
+  echo "=== WINDOW $W SIGNAL-RECEIVED DURATION=$(( now - START ))s END $(date +%Y-%m-%dT%H:%M:%S%z) ===" >> "$OUT"
 
   kill -TERM "$AGENT_PID" 2>/dev/null \
     && echo "=== WINDOW $W TERM-SENT pid=$AGENT_PID ===" >> "$OUT" \
@@ -116,7 +119,7 @@ CODE=$?
 END=$(date +%s)
 {
   echo ""
-  echo "=== WINDOW $W EXIT=$CODE DURATION=$((END - START))s END $(date -Iseconds) ==="
+  echo "=== WINDOW $W EXIT=$CODE DURATION=$((END - START))s END $(date +%Y-%m-%dT%H:%M:%S%z) ==="
 } >> "$OUT"
 
 # 兜底 handoff 的搬运：配置叠加层让工人在上下文将满时自动把交接文档写进会话产物目录，
