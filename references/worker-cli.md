@@ -227,9 +227,84 @@
 | 实测 | `crush run -q "reply with exactly: OK"` → `OK`，rc=0 |
 | 坑 | 配置是 `crushrc`（Bash + 内置命令）与 JSON 两套并存，改错文件不报错、静默不生效——改完先跑一次确认 |
 
+### cline — 实测通过（3.0.65，npm `cline`）
+
+| 语义 | 形态 |
+|---|---|
+| C1 | `cline "<提示词>"`（**默认 act 模式且自动批准已开**）；`-p` / `--plan` 只读规划；`--json` 结构化输出 |
+| C2 | 文档未载 |
+| C3 | `-c` / `--cwd <path>` |
+| C4 | `--auto-approve <true\|false>`（默认 `true`） |
+| C5 | 文档未载 ⇒ 驱动器 `timeout` |
+| C6 / C7 | 驱动器 |
+| C8 / C9 | `--compaction agentic\|basic\|off`（默认 `agentic`） |
+| C10 | **SQLite**：`~/.cline/data/db/sessions.db`（另有 `tasks.db` / `connectors.db`） |
+| 档位 | `--thinking none\|low\|medium\|high\|xhigh` |
+| 接自建网关 | `cline auth openai -k <key> -m <model-id> -b <网关>/v1`（落到 `~/.cline/data/settings/providers.json`）；要隔离状态用 `--data-dir` |
+| 实测 | `cline "reply with exactly: OK"` → `OK`，rc=0 |
+| 坑 | 默认 act + 自动批准 ⇒ 直接当工人等于放开写入；stdout 会被 AI SDK 弃用警告污染（要干净输出用 `--json` 或只取 stdout） |
+
+### qwen-code — 实测通过（0.24.4，npm `@qwen-code/qwen-code`）
+
+| 语义 | 形态 |
+|---|---|
+| C1 | `qwen -m <model> "<提示词>"`（`-p/--prompt` 仍在但已标 deprecated）；**非交互必须先选 auth type** |
+| C2 | 帮助文本提到 `--continue` / `--resume`（`--chat-recording=false` 会让它们失效）；未实测 |
+| C3 | `--include-directories` / `--add-dir` |
+| C4 | `-y` / `--yolo`；`--approval-mode plan\|default\|auto-edit\|auto\|yolo` |
+| C5 | 文档未载 ⇒ 驱动器 `timeout` |
+| C6 / C7 | 驱动器 |
+| C8 / C9 | 文档未载 |
+| C10 | `~/.qwen/projects/<项目 slug>/chats/<session-uuid>.jsonl`（记录含 `uuid` / `parentUuid` / `sessionId` / `cwd`）；另有 `~/.qwen/usage_record.jsonl` |
+| 档位 | `-m` / `--model`；`--fallback-model` |
+| 接自建网关 | `OPENAI_API_KEY` + `OPENAI_BASE_URL=<网关>/v1` + **`--auth-type openai`**（缺 auth type 直接拒绝非交互运行） |
+| 实测 | `OPENAI_BASE_URL=<网关>/v1 qwen --auth-type openai -m global:deepseek-v4.1-flash -p "reply with exactly: OK"` → `OK` |
+| 坑 | 自带 vendored ripgrep 可能没有执行位（报 `EACCES` 并降级内置 grep）⇒ `chmod +x …/vendor/ripgrep/x64-linux/rg` |
+
+### goose — 实测通过（1.52.0，官方安装脚本）
+
+| 语义 | 形态 |
+|---|---|
+| C1 | `goose run -t "<文本>"`（或 `-i <文件>`）；`goose session` 是交互模式 |
+| C2 | 文档未载（`goose session` 侧有 resume） |
+| C3 | 文档未载（按调用方 `cd` 处理） |
+| C4 | 文档未载（在 `goose configure` 里配） |
+| C5 | 文档未载 ⇒ 驱动器 `timeout` |
+| C6 / C7 | 驱动器 |
+| C8 / C9 | 文档未载 |
+| C10 | **SQLite**：`~/.local/share/goose/sessions/sessions.db` |
+| 档位 | 配置里选 provider / model |
+| 接自建网关 | 环境变量：`GOOSE_PROVIDER=openai GOOSE_MODEL=<model-id> OPENAI_HOST=<网关根，**不含** /v1> OPENAI_API_KEY=<key>` |
+| 实测 | 上述四变量 + `goose run -t "reply with exactly: OK"` → `OK`，rc=0 |
+| 坑 | 官方安装脚本依赖 `bzip2` 解 `.tar.bz2`；无 root 装不了 bzip2 时用 Python 的 `tarfile` + `bz2` 自己解包到 `~/.local/bin`（本次即如此） |
+
+### droid — 装得上，但**要 Factory 账号**（0.226.2，官方安装脚本）
+
+| 语义 | 形态 |
+|---|---|
+| C1 | `droid exec --auto low\|medium\|high [-m <模型>] "<提示词>"`；`--skip-permissions-unsafe` 关掉全部权限检查；`-o/--output-format`、`--input-format stream-json` |
+| C3 | `--cwd <path>`；`-w/--worktree` |
+| C2 | `-r/--resume [sessionId]`、`--last`、`--fork <id>` |
+| 档位 | `-m/--model`、`-r/--reasoning-effort` |
+| 接自建网关 | `~/.factory/config.json` 的 `custom_models[]`（`model_display_name` / `model` / `base_url` / `api_key` / `provider`）**能被加载**，模型 id 形如 `custom:<slug>-<n>` |
+| 实测 | **未跑通**：自定义模型已列出，但 `droid exec` 日志 `No authentication credentials available (storage empty, no API key)`，进程挂到超时 ⇒ 即使给了自定义模型，仍要 Factory 凭据 |
+| 判据 | **先确认用户有没有该 SaaS 账号**，再把它列入候选 |
+
+### amp — 装得上，但**是 SaaS 登录墙**（0.0.179…，npm `@sourcegraph/amp`）
+
+- `amp -x "<提示词>"` 需先 `amp login`；实测直接进浏览器登录流程并打印 `https://ampcode.com/auth/cli-login?...` 后停在"粘贴验证码"
+- **接不了自建网关**：没有 base-url / provider 开关，凭据由 Amp 账号签发（只有 `--settings-file`）
+
 ### 未列的 CLI
 
-`cursor-agent` / `droid` / `amp` / `qwen-code` 等不在本节：**官方文档没查到，或本次没装过**。要加一个，走 §6 的流程，不要凭印象补一行。
+`cursor-agent` / `kilo` / `openhands` / `plandex` / `codebuff` 等不在本节：本次没装过，或官方文档没查到入口。要加一个，走 §6 的流程，不要凭印象补一行。
+
+**判据（本次归纳）**——候选先分两类，②类必须先问用户有没有账号：
+
+| 类 | 判据 | 已实测的成员 |
+|---|---|---|
+| ① **能指向自建网关** | 有 provider / base-url / OpenAI 兼容配置入口 | aider · crush · opencode · pi · omp · cline · qwen-code · goose |
+| ② **SaaS 绑定，只认自家账号** | 登录流程换不出可替换的凭据；没有 base-url 开关 | amp · droid；以及只认自家 wire API 的 gemini-cli（Gemini API）、codex（Responses）、claude-code（Messages）——后三者**加适配层**后可归入① |
 
 ## 5. 装工人 CLI 的环境前提（Linux / WSL2，无 root）
 
@@ -253,6 +328,14 @@
 - **看清 shebang**：Claude Code 的安装器是 **bash** 脚本，用 `sh` 跑会报 `Syntax error: "(" unexpected`。
 - **bin 名会互相覆盖**：`@oh-my-pi/pi-coding-agent`（omp）与 `@earendil-works/pi-coding-agent`（pi）都提供 `pi` ⇒ 至少一个装到独立 prefix。
 - 装完立刻冒烟（C1 一条命令），**别等到派活那天才发现它起不来**。
+
+**无 root 时的绕法（本次新得）**：
+
+- 安装脚本要 `bzip2` / `unzip` 而没有时，用 Python 标准库自己解，再把二进制拷进 `~/.local/bin`：
+  `python3 -c "import tarfile; tarfile.open('/tmp/x.tar.bz2','r:bz2').extractall('/tmp/x')"`（goose 即如此装上）。
+- **落点**：二进制安装器（codex / claude / droid / opencode / goose）都落 `~/.local/bin`；npm 装的 CLI 落 node 的 bin 目录（`$HOME/.local/node/bin`）。
+- **npm 包里可能带没有执行位的 vendored 二进制**（qwen 的 ripgrep 报 `EACCES`）⇒ `chmod +x` 一下，别让它静默降级。
+- **装成功 ≠ 能用**：SaaS 绑定的 CLI（amp / droid）装完仍卡在登录/凭据上——先确认账号，再列入候选。
 
 ## 6. 新增一个 CLI 的取证流程
 
