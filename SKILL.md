@@ -113,6 +113,7 @@ digraph loop {
 | `references/delegation.md` | 生产型 / 隔离型委托 · 窗口可靠性 |
 | `references/verification.md` | 证据规则 · 抽查 · 反例设计 · 退回协议 |
 | `references/pitfalls.md` | 通用陷阱库（按类别，随用增长） |
+| `references/worker-cli.md` | 选工人（**先问用户**） · 按难度选档 · 工人 CLI 契约（10 条语义） · 各 CLI 开关映射（带官方文档出处） |
 | `templates/` | 冻结方案 · 切片指令（**内嵌交接模板**） · 工人合同 · 验收记录 |
 | `scripts/` | 一份 omp 驱动器实现（**协议与工具无关**；语义要求见 `delegation.md`） |
 | `VALIDATION.md` | 验证证据 + 维护说明（**只在你要改这个 skill 时读**） |
