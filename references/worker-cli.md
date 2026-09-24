@@ -426,6 +426,36 @@
 | ① **能指向自建网关** | 有 provider / base-url / OpenAI 兼容配置入口 | aider · crush · opencode · pi · omp · cline · qwen-code · goose · codewhale · reasonix · cn · kilo · iflow · hermes · openclaw；gptme 与 codex 需 Responses 适配层，claude-code 需 Messages 适配层 |
 | ② **SaaS 绑定，只认自家账号** | 登录流程换不出可替换的凭据；没有 base-url 开关 | amp · droid · cursor-agent（`-e` 指向别处仍拿 key 去 Cursor 服务端校验，报 *API key is invalid*）· codebuff（只有 `CODEBUFF_APP_URL`，无 base-url）· gemini-cli（只认 Gemini API） |
 
+## 4.5 契约实测矩阵（2026-09-24，WSL2 Ubuntu 24.04 / bash 5.2）
+
+测试动作：**C2** = 先问"记住 47"再问"是几"（能续接才会答 47）；**C3+C4** = 在指定目录里让它建 `c3.txt`（无 TTY，不挂审批才算过）。
+
+| CLI | C2 续接 | C3+C4 写入 | 必需的旗标 / 配置（缺了就失败或挂住） |
+|---|---|---|---|
+| omp | ✅ | ✅ | 默认即 `--auto-approve` |
+| pi | ✅ | ✅ | — |
+| opencode | ✅ | ✅ | — |
+| kilo | ✅ | ✅ | — |
+| cline | ❌ **无 `--continue`** | ✅ | 默认 act 模式 + 自动批准 |
+| crush | ✅ | ✅ | — |
+| codex | ✅ `exec resume --last` | ✅ | **`--sandbox workspace-write`**（`exec` 默认 read-only，写不了）；非 git 目录续接还要 `--skip-git-repo-check` |
+| claude | ✅ | ✅ | **`--permission-mode acceptEdits`**（`-p` 下默认不批编辑） |
+| qwen | ✅ | ✅ | **`-y`**（不给就挂住等审批） |
+| goose | ✅ | ✅ | **`GOOSE_MODE=auto`** |
+| cn | ❌ `-p --continue` 空输出 | ✅ | `--auto` |
+| codewhale | ❌ `--continue` 要求该 workspace 已有保存会话 | ✅ | `--auto` |
+| reasonix | ✅ | ❌ 未通 | `--permission-mode` 合法值只有 `read-only\|workspace-write\|danger-full-access\|plan`（写 `allow` 会报错）；给了 `workspace-write` 仍未写盘，机制待查 |
+| iflow | ✅ | ❌ 未通 | `-y` 无效；bundle 里审批值只有 `default\|plan\|yolo`，非交互写盘机制待查 |
+| hermes | ✅ | ✅ | `--yolo` + **`--in .`** |
+| openclaw | ✅ | ✅ | **`--json`**（模型须先注册进 `models.providers`） |
+| gptme | ❌ `--continue` 未接上上下文 | ✅ | **`--tools save,patch,shell`**（默认工具面不含写盘） |
+| aider | ❌ one-shot，不续接 | ✅ | `--yes --no-auto-commits` + `OPENAI_API_KEY` / `OPENAI_API_BASE` |
+| **本仓库驱动器** | — | — | **C6/C7/C8 实测 PASS**（结局标记 / TERM 终止工人 / 兜底交接搬运），见 `VALIDATION.md` |
+
+小计：**C2 14/18 通过**（失败者多为"设计上不续接"或"要另配会话"），**C3+C4 16/18 通过**。
+
+> 判据：**C4 是最容易踩的一栏**——同一句"让它建个文件"，18 个 CLI 里有一半需要各自不同的旗标/配置才肯在无 TTY 下动手。派活前先把这一栏的旗标写进调用行，否则现象是"挂住"或"什么都没做"，而不是报错。
+
 ## 5. 装工人 CLI 的环境前提（Linux / WSL2，无 root）
 
 判据：**没有 root 也能装**——全部走用户级路径，不要为了装 CLI 去要 sudo。
