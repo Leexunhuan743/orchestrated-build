@@ -90,8 +90,8 @@
 
 ## 5. 提交与门禁 【通用】
 
-- 提交信息：`<type>(<scope>): <summary>`；type ∈ feat|fix|refactor|perf|test|docs|build|chore|ci。
-- **代码与文档分开提交**。禁止批量暂存：显式列出路径。
+- 提交信息遵循本仓库惯例；若无惯例，可用 `<type>(<scope>): <summary>`（type ∈ feat|fix|refactor|perf|test|docs|build|chore|ci）。
+- 按本仓库约定划分提交，保证代码与必要文档在提交边界上保持一致。禁止批量暂存：显式列出路径。
 - 每次提交前必跑（缺一不可）：
 
 ```bash

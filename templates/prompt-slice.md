@@ -78,7 +78,7 @@
 
 ```bash
 git add <逐个文件路径>
-git commit -m "<type>(<scope>): <summary>"
+git commit -m "<按仓库约定填写的提交信息>"
 ```
 
 > 若会话可续接，我可能在同一会话追问。交接文档要写到"换一个人接手也能继续"的程度。
