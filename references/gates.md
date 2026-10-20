@@ -123,6 +123,8 @@
   AGENTS.md                   仓库工程约定（保留并合并现有要求）
   docs/<契约>.md              仓库内契约（**工人唯一的行为判据**）
   docs/freeze-plan.md         冻结方案（只保留当前有效范围）
+  .gitignore                  必须含 .scratch/
+  .scratch/                   临时产物（**有用的东西不许放这里**，不进版本控制）
   orch-doc/                   记录目录
     00-总纲.md  01-决策记录.md  02-切片计划.md  03-派工协议.md
     80-已知缺口.md  90-工人台账.md  99-完成总结.md
@@ -132,6 +134,8 @@
 ```
 
 上图是 heavy 的拆分布局。**lite 只建 `orch-doc/00-总纲.md` 与 `orch-doc/handoffs/`**，内容下限见下文「lite 记录」；下文的 ADR、缺口表、台账、验收等名称在 lite 指总纲内的记录。工人合同随指令下发；两档都保留仓库内契约与冻结方案。
+
+**`.scratch/` 是唯一的可丢弃区。** 建它、把 `.scratch/` 加进 `.gitignore`（否则"临时"会被提交进历史），并在目录里放一份 `templates/scratch-readme.txt` 的原样副本——**目录里放什么、按什么层级建，由那份 readme 定义，本文件不重复**。要长期保留的东西不进这里：该进仓库的进仓库，该交接的进 `orch-doc/`。
 
 ### lite 记录
 

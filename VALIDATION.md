@@ -73,6 +73,7 @@ git show 7e6dedd:VALIDATION.md
 | 记录目录采用 orch-doc | `references/gates.md`「目录布局」 | 第 16 轮 |
 | 契约独立复核与接手者选择 | `references/gates.md`、`references/delegation.md` | 第 20–22 轮 |
 | 执行工件的恢复和整合归属 | `references/gates.md`、`templates/acceptance.md`、`templates/prompt-slice.md` | 第 31–32 轮 |
+| 临时产物集中在 `.scratch/`，有用的不得放 | `references/gates.md`「目录布局」、`templates/AGENTS.md §1`、`templates/scratch-readme.txt` | 本次用户要求 |
 
 ## 未验证范围与已知局限
 

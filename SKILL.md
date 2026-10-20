@@ -132,7 +132,7 @@ digraph loop {
 | `references/delegation.md` | 派工、续接、换人或安排并行时读 |
 | `references/verification.md` | 定验收标准、验收或退回时读 |
 | `references/pitfalls.md` | 遇到相应问题、技术栈或收集陷阱时读，按类别定位 |
-| `templates/` | 产出对应工件时读：冻结方案 · 切片指令（内嵌交接模板）· 工人合同 · 验收记录 |
+| `templates/` | 产出对应工件时读：冻结方案 · 切片指令（内嵌交接模板） · 工人合同 · 验收记录 · 临时区 readme |
 | `references/omp.md` | 仅在 OMP 环境中映射工具时读 |
 | `VALIDATION.md` | 维护时先读当前要求与未验证面，再按历史索引定位相关证据；用户要求全文通读时读全文 |
 
