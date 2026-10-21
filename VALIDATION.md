@@ -2,11 +2,7 @@
 
 维护本 skill 时读本文件。执行规则以 `SKILL.md`、`references/` 和模板为准；这里保存维护要求、证据摘要及验证限制。
 
-旧版 680 行完整记录保存在提交 `7e6dedd`（[旧版全文](https://github.com/Leexunhuan743/orchestrated-build/blob/7e6dedd/VALIDATION.md)），需要用户原话、旧路径、实验条件或修订经过时读取：
-
-```bash
-git show 7e6dedd:VALIDATION.md
-```
+旧版 680 行完整记录保存在提交 `7e6dedd`（[旧版全文](https://github.com/Leexunhuan743/orchestrated-build/blob/7e6dedd/VALIDATION.md)）；需要用户原话、旧路径、实验条件或修订经过时读取（仓库克隆中可用 `git show 7e6dedd:VALIDATION.md`）。
 
 ## 证明什么、不证明什么
 
@@ -33,7 +29,7 @@ git show 7e6dedd:VALIDATION.md
 | 工具断言 | 对照实际工具文档、帮助或实测；不能核实的明确标记，换环境重新映射能力 |
 | 验证记录 | 记录实际观察和通过判据；静态通过不声称行为有效。新增脚本按其语言与用途检查 |
 
-本文件中的历史路径与工具能力只用于追溯，不能直接作为当前执行指令。换 harness 时核对 `references/delegation.md`、`references/omp.md`、`references/kero.md`、记录与交接模板中的会话、暂停、审计、工作区和运行上限能力；技能发现按所在环境核实。
+本文件中的历史路径与工具能力只用于追溯，不能直接作为当前执行指令。换 harness 时核对 `references/carriers.md`、`references/delegation.md`、记录与交接模板中的会话、暂停、审计、工作区和运行上限能力；技能发现按所在环境核实。
 
 ### 后续更新
 
@@ -57,7 +53,7 @@ git show 7e6dedd:VALIDATION.md
 | 第 29 轮：Git 状态实验 | 普通 diff 为空时 status 仍报未跟踪文件；check-ignore 识别被忽略的交付物 | 普通 diff 不覆盖全部交付内容；未验证真实并行项目的完整归因流程 |
 | 第 31 轮：整合映射实验 | 来源与目标结果 SHA 不同，产物 blob 相同；目标既有文件保留 | 提交身份变化可正常发生；未实测复杂冲突、失败撤回或跨会话恢复 |
 | 第 25–32 轮：文档维护 | 路径、章节、围栏和流程图检查通过，补入变更传播、预算、用户流程、恢复与整合记录 | 仅是静态一致性或设计推演，未运行完整委托任务 |
-| 终端会话载体（2026-10-21 实测） | Windows 10 + pwsh/bash、kero protocol 3：`new`/`split` 返回 id、`wait --exit` 传回命令退出码（`exit 5` → rc=5）、`send --enter` 与 `prompt` 驱动交互 shell、`status --json` 给出 `commandExit`、`diff` 输出工作区改动（含未跟踪文件）、目标不存在 rc=3。`report` 状态在嵌套 shell 中不落库，只在直接作为面板命令时稳定可读 | 支持 `references/kero.md` 的能力映射与「report 不可作状态机」的限制；仅该平台与版本，macOS/Linux、并发上限、各 `--for` 状态未核实 |
+| 终端会话载体（2026-10-21 实测） | Windows 10 + pwsh/bash、kero protocol 3：`new`/`split` 返回 id、`wait --exit` 传回命令退出码（`exit 5` → rc=5）、`send --enter` 与 `prompt` 驱动交互 shell、`status --json` 给出 `commandExit`、`diff` 输出工作区改动（含未跟踪文件）、目标不存在 rc=3。`report` 状态在嵌套 shell 中不落库，只在直接作为面板命令时稳定可读 | 支持 `references/carriers.md`「用终端会话或命令行调用时」以退出码与交接文件判定结束的做法；观察仅适用于该平台与版本，macOS/Linux、并发上限、各 `--for` 状态未核实 |
 
 旧窗口驱动器的信号与交接补测、OMP 能力对照等环境专属证据留在旧版记录中；对应载体已移除或当前能力未核实，不据此增加新的通用要求。
 
@@ -69,13 +65,13 @@ git show 7e6dedd:VALIDATION.md
 |---|---|---|
 | 精简规则、减少重复与战术约束 | 本文件维护检查及 `references/pitfalls.md` 去重判据 | 第 7、8、10、13、19、22–24 轮 |
 | 重构时裁决保留、修正或废弃的行为 | `SKILL.md`「契约规格」 | 第 9 轮 |
-| 旧项目默认禁读，读取例外由主代理判断 | `templates/AGENTS.md` §1、`SKILL.md`「契约规格」 | 第 12、18、29 轮；第 11、28 轮的旧口径已被后续修订 |
-| 使用子代理，移除独立窗口路径 | `references/delegation.md`、`references/omp.md` | 第 17 轮 |
-| 终端会话作为与子代理并列的载体 | `references/kero.md`、`references/delegation.md`「生产型」 | 本次用户要求 |
+| 旧项目默认禁读，读取例外由主代理判断 | `templates/worker-contract.md` §1、`SKILL.md`「契约规格」 | 第 12、18、29 轮；第 11、28 轮的旧口径已被后续修订 |
+| 使用子代理，移除独立窗口路径 | `references/carriers.md`、`references/delegation.md` | 第 17 轮 |
+| 子代理、终端会话、命令行调用是并列的三种载体，可单用或混用，由用户确认；不维护具体工具的命令手册 | `references/carriers.md` | 用户要求（2026-10-21） |
 | 记录目录采用 orch-doc | `references/gates.md`「目录布局」 | 第 16 轮 |
 | 契约独立复核与接手者选择 | `references/gates.md`、`references/delegation.md` | 第 20–22 轮 |
 | 执行工件的恢复和整合归属 | `references/gates.md`、`templates/acceptance.md`、`templates/prompt-slice.md` | 第 31–32 轮 |
-| 临时产物集中在 `.scratch/`，有用的不得放 | `references/gates.md`「目录布局」、`templates/AGENTS.md §1`、`templates/scratch-readme.txt` | 本次用户要求 |
+| 临时产物集中在 `.scratch/`，有用的不得放 | `references/gates.md`「目录布局」、`templates/worker-contract.md §1`、`templates/scratch-readme.txt` | 本次用户要求 |
 
 ## 未验证范围与已知局限
 
@@ -84,10 +80,8 @@ git show 7e6dedd:VALIDATION.md
 - 复用与换人的效果、在途暂停及新契约传播、升档补审的可靠性。
 - lite 影响范围回归、关键用户流程覆盖、主代理跨会话恢复与复杂整合/失败保护的真实效果。
 - 敏感转录的安全入库及读取审计在实际项目中的完整性。早期记录目录未独立版本化，旧提交纪律未得到完整实测。
-- 主代理仍负责规格和最终裁决，同模型复核可能共享盲区；OMP 默认值与历史平台案例使用前仍需核实。
+- 主代理仍负责规格和最终裁决，同模型复核可能共享盲区；具体载体工具的接口与上限使用前仍需按所在环境核实。
 
 ## 最近维护检查
 
-完整读取旧文件后，按维护要求、证据类型和适用限制重构，撤回此前误改的 verification.md 及联动文件。旧版通过 Git 保留，未重新运行历史实验，也未增加新的执行规则。
-
-本次文件引用、章节、节次、围栏、技能格式及 diff 检查通过；已核对旧版可从 Git 取回，且其它工作文件与 HEAD 一致。这些检查只验证整理的完整性，不代表流程行为效果。
+2026-10-21：本地路径与「章节」引用全部可解析；主循环图所有节点可达，唯一出口为交付；记录路径均为 ASCII；工人合同允许读取的路径覆盖其指令文件与交接目录。均为静态检查，不代表流程行为效果。
