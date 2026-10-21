@@ -33,7 +33,7 @@ git show 7e6dedd:VALIDATION.md
 | 工具断言 | 对照实际工具文档、帮助或实测；不能核实的明确标记，换环境重新映射能力 |
 | 验证记录 | 记录实际观察和通过判据；静态通过不声称行为有效。新增脚本按其语言与用途检查 |
 
-本文件中的历史路径与工具能力只用于追溯，不能直接作为当前执行指令。换 harness 时核对 `references/delegation.md`、`references/omp.md`、记录与交接模板中的会话、暂停、审计、工作区和运行上限能力；技能发现按所在环境核实。
+本文件中的历史路径与工具能力只用于追溯，不能直接作为当前执行指令。换 harness 时核对 `references/delegation.md`、`references/omp.md`、`references/kero.md`、记录与交接模板中的会话、暂停、审计、工作区和运行上限能力；技能发现按所在环境核实。
 
 ### 后续更新
 
@@ -57,6 +57,7 @@ git show 7e6dedd:VALIDATION.md
 | 第 29 轮：Git 状态实验 | 普通 diff 为空时 status 仍报未跟踪文件；check-ignore 识别被忽略的交付物 | 普通 diff 不覆盖全部交付内容；未验证真实并行项目的完整归因流程 |
 | 第 31 轮：整合映射实验 | 来源与目标结果 SHA 不同，产物 blob 相同；目标既有文件保留 | 提交身份变化可正常发生；未实测复杂冲突、失败撤回或跨会话恢复 |
 | 第 25–32 轮：文档维护 | 路径、章节、围栏和流程图检查通过，补入变更传播、预算、用户流程、恢复与整合记录 | 仅是静态一致性或设计推演，未运行完整委托任务 |
+| 终端会话载体（2026-10-21 实测） | Windows 10 + pwsh/bash、kero protocol 3：`new`/`split` 返回 id、`wait --exit` 传回命令退出码（`exit 5` → rc=5）、`send --enter` 与 `prompt` 驱动交互 shell、`status --json` 给出 `commandExit`、`diff` 输出工作区改动（含未跟踪文件）、目标不存在 rc=3。`report` 状态在嵌套 shell 中不落库，只在直接作为面板命令时稳定可读 | 支持 `references/kero.md` 的能力映射与「report 不可作状态机」的限制；仅该平台与版本，macOS/Linux、并发上限、各 `--for` 状态未核实 |
 
 旧窗口驱动器的信号与交接补测、OMP 能力对照等环境专属证据留在旧版记录中；对应载体已移除或当前能力未核实，不据此增加新的通用要求。
 
@@ -70,6 +71,7 @@ git show 7e6dedd:VALIDATION.md
 | 重构时裁决保留、修正或废弃的行为 | `SKILL.md`「契约规格」 | 第 9 轮 |
 | 旧项目默认禁读，读取例外由主代理判断 | `templates/AGENTS.md` §1、`SKILL.md`「契约规格」 | 第 12、18、29 轮；第 11、28 轮的旧口径已被后续修订 |
 | 使用子代理，移除独立窗口路径 | `references/delegation.md`、`references/omp.md` | 第 17 轮 |
+| 终端会话作为与子代理并列的载体 | `references/kero.md`、`references/delegation.md`「生产型」 | 本次用户要求 |
 | 记录目录采用 orch-doc | `references/gates.md`「目录布局」 | 第 16 轮 |
 | 契约独立复核与接手者选择 | `references/gates.md`、`references/delegation.md` | 第 20–22 轮 |
 | 执行工件的恢复和整合归属 | `references/gates.md`、`templates/acceptance.md`、`templates/prompt-slice.md` | 第 31–32 轮 |
