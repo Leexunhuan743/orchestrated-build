@@ -43,7 +43,7 @@
 
 产出 = 验收记录（`templates/acceptance.md`）。**填充纪律见 `references/verification.md` 的三条硬约束。**
 
-**这一关由我按 `references/verification.md` 第 1 步复跑门禁**，覆盖本片与受影响的已完成切片。
+**这一关由我按 `references/verification.md` 第 1–4 步执行**：复跑门禁、核对 Git 状态、抽查实现、按风险验证不变量。高风险切片另需独立代码审查记录（见 `references/delegation.md`「独立代码审查」），审查未完成或仍有阻断项时不得写「通过」。覆盖本片与受影响的已完成切片。
 
 验收记录标明对象是工人产物还是整合后的目标状态；状态与证据索引按下文「切片状态与整合记录」更新。
 

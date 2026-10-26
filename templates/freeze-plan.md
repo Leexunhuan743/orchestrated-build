@@ -23,6 +23,8 @@
 |---|---|---|
 | <子代理 / 终端会话 / 命令行调用> | <如 Claude Code Agent / kero / `codex exec`> | <实现切片 / 独立复核 / 长测试……> |
 
+> **并行实现时登记隔离方式**：原生 worktree / 手工 `git worktree` / 串行；规则见 `references/carriers.md`「worktree 隔离」。
+
 ## 1. 目标
 
 一句话，**可判定成败**：

@@ -97,6 +97,7 @@
 
 - 提交信息遵循本仓库惯例；若无惯例，可用 `<type>(<scope>): <summary>`（type ∈ feat|fix|refactor|perf|test|docs|build|chore|ci）。
 - 按本仓库约定划分提交，保证代码与必要文档在提交边界上保持一致。禁止批量暂存：显式列出路径。
+- 在独立 worktree 中工作时，只在该 worktree 的分支提交，不切回主工作区操作；合并与目标验收由主代理完成。
 - 由本轮提交责任人执行提交；检查范围与命令按仓库约定及本轮指令填写：
 
 ```bash
